@@ -96,6 +96,11 @@ To run the script automatically every **Saturday at 22:30**:
 | `./wp-toolkit.sh <domain>`           | Update a specific domain                     |
 | `./wp-toolkit.sh check-php`          | Check for outdated PHP versions across all sites |
 
+## Authors
+
+Made by Nicolai from [e-studio.dk](https://e-studio.dk)  
+in collaboration with ChatGPT.
+
 ---
 
 ## 🇩🇰 Dansk
@@ -188,3 +193,9 @@ For at køre scriptet automatisk hver **lørdag kl. 22:30**:
 | `./wp-toolkit.sh all 10`             | Opdater kun de første 10 installationer        |
 | `./wp-toolkit.sh <domæne>`           | Opdater et specifikt domæne                    |
 | `./wp-toolkit.sh check-php`          | Tjek for forældet PHP-version på alle sites    |
+
+## Forfattere
+
+Lavet af Nicolai fra [e-studio.dk](https://e-studio.dk)  
+i samarbejde med ChatGPT.
+![Built with Bash](https://img.shields.io/badge/Built%20with-Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
