@@ -198,4 +198,7 @@ For at køre scriptet automatisk hver **lørdag kl. 22:30**:
 
 Lavet af Nicolai fra [e-studio.dk](https://e-studio.dk)  
 i samarbejde med ChatGPT.
+
+
 ![Built with Bash](https://img.shields.io/badge/Built%20with-Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![Assisted by ChatGPT](https://img.shields.io/badge/Assisted%20by-ChatGPT-10a37f?style=for-the-badge&logo=openai&logoColor=white)
