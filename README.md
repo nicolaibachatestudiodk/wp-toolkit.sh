@@ -1,6 +1,6 @@
 ![Built by e-studio.dk](https://img.shields.io/badge/Built%20by-e--studio.dk-blue?style=for-the-badge)
 ![Assisted by ChatGPT](https://img.shields.io/badge/Assisted%20by-ChatGPT-10a37f?style=for-the-badge&logo=openai&logoColor=white)
-![Built in Bash](https://img.shields.io/badge/Built%20with-Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![Built in Bash](https://img.shields.io/badge/Built%20in-Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
 # WP Toolkit Maintenance Script
 
 Automated maintenance script for WordPress installations using WP Toolkit.  
