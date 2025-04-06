@@ -5,8 +5,8 @@
 # Sidst opdateret: 2025-04-06
 
 TODAY=$(date '+%Y-%m-%d')
-LOGFILE="/var/log/wp-toolkit-update-$TODAY.log"
-EMAIL="email@domain.dk"
+LOGFILE="/var/log/wp-toolkit-update-$TODAY.log" # Log file location 
+EMAIL="email@domain.dk" # Email
 
 # -- Variabler du kan styre --
 SEND_MAIL="yes"          # yes eller no
