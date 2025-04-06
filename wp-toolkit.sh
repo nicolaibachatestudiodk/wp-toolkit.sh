@@ -1,85 +1,91 @@
 #!/bin/bash
 
-# Filnavn: /root/wp-toolkit.sh
-# Version: 1.8
-# Sidst opdateret: 2025-04-06
+# File: /root/wp-toolkit.sh
+# Version: 2.1
+# Last updated: 2025-04-06
+
+# Check if running under Bash
+if [ -z "$BASH_VERSION" ]; then
+  echo "Error: Please run this script with bash, not sh."
+  exit 1
+fi
 
 TODAY=$(date '+%Y-%m-%d')
-LOGFILE="/var/log/wp-toolkit-update-$TODAY.log" # Log file location 
+LOGFILE="/var/log/wp-toolkit-update-$TODAY.log" # Log location
 EMAIL="email@domain.dk" # Email
 
-# -- Variabler du kan styre --
-SEND_MAIL="yes"          # yes eller no
-MAIL_MODE="errors"       # errors = kun fejl, success = kun succes, both = altid
-SEND_PHP_MAIL="yes"      # yes eller no (send mail hvis outdated PHP findes)
-# ----------------------------
+# -- Settings --
+SEND_MAIL="yes"          # yes or no
+MAIL_MODE="errors"       # errors, success, or both
+SEND_PHP_MAIL="yes"      # yes or no (send mail if outdated PHP is detected)
+# ----------------
 
-# ------------------------
-# Version header
-# ------------------------
+# ----------------
+# Version Header
+# ----------------
 
 echo "============================================"
-echo " WP Toolkit Maintenance Script - Version 1.8"
+echo " WP Toolkit Maintenance Script - Version 2.1"
 echo "============================================"
 echo ""
 
-# ------------------------
-# Log funktion
-# ------------------------
+# ----------------
+# Log Function
+# ----------------
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $1" | tee -a "$LOGFILE"
 }
 
-# ------------------------
-# Slet logs ældre end 30 dage
-# ------------------------
+# ----------------
+# Clean up old logs
+# ----------------
 
 find /var/log/ -name 'wp-toolkit-update-*.log' -mtime +30 -delete
 
-# ------------------------
-# Opret logfil hvis den ikke findes
-# ------------------------
+# ----------------
+# Ensure log file exists
+# ----------------
 
 if [ ! -f "$LOGFILE" ]; then
     touch "$LOGFILE"
     chmod 600 "$LOGFILE"
 fi
 
-# ------------------------
-# Tjek om wp-toolkit findes
-# ------------------------
+# ----------------
+# Check for wp-toolkit command
+# ----------------
 
 if ! command -v wp-toolkit &> /dev/null; then
-    echo "Fejl: wp-toolkit kommandoen blev ikke fundet." | tee -a "$LOGFILE"
+    echo "Error: wp-toolkit command not found." | tee -a "$LOGFILE"
     if [ "$SEND_MAIL" == "yes" ]; then
-        echo "wp-toolkit kommandoen blev ikke fundet." | mail -s "❌ WP Toolkit fejl på serveren" "$EMAIL"
+        echo "wp-toolkit command not found on server." | mail -s "❌ WP Toolkit error" "$EMAIL"
     fi
     exit 1
 fi
 
-# ------------------------
-# Tjek at der er et parameter
-# ------------------------
+# ----------------
+# Validate input
+# ----------------
 
 if [ -z "$1" ]; then
-    echo "Fejl: Ingen parameter angivet." | tee -a "$LOGFILE"
+    echo "Error: No parameter provided." | tee -a "$LOGFILE"
     echo ""
-    echo "Brug: "
-    echo "  sh wp-toolkit.sh all              # Opdater ALLE installationer"
-    echo "  sh wp-toolkit.sh all <antal>      # Opdater KUN de første <antal> installationer"
-    echo "  sh wp-toolkit.sh <domæne>         # Opdater specifikt domæne"
-    echo "  sh wp-toolkit.sh check-php        # Tjek for forældet PHP-version"
+    echo "Usage:"
+    echo "  ./wp-toolkit.sh all              # Update all WordPress installations"
+    echo "  ./wp-toolkit.sh all <limit>      # Update only the first <limit> installations"
+    echo "  ./wp-toolkit.sh <domain>         # Update specific domain"
+    echo "  ./wp-toolkit.sh check-php        # Check for outdated PHP versions"
     echo ""
     exit 1
 fi
 
-# ------------------------
-# check-php funktion
-# ------------------------
+# ----------------
+# Check outdated PHP
+# ----------------
 
 if [ "$1" == "check-php" ]; then
-    log "Tjekker alle installationer for forældet PHP-version..."
+    log "Checking all installations for outdated PHP versions..."
 
     PHP_OUTDATED=""
 
@@ -91,26 +97,26 @@ if [ "$1" == "check-php" ]; then
     done < <(wp-toolkit --list --format raw | grep "Outdated PHP" | grep -oP 'https://\S+')
 
     if [ -n "$PHP_OUTDATED" ]; then
-        log "Installationer med forældet PHP fundet:"
+        log "Outdated PHP installations found:"
         echo -e "$PHP_OUTDATED" | tee -a "$LOGFILE"
 
         if [ "$SEND_PHP_MAIL" == "yes" ]; then
-            echo -e "Følgende installationer kører med forældet PHP:\n$PHP_OUTDATED" | mail -s "⚠️ Advarsel: Forældet PHP fundet på serveren" "$EMAIL"
+            echo -e "The following installations are running outdated PHP versions:\n$PHP_OUTDATED" | mail -s "⚠️ Outdated PHP detected on server" "$EMAIL"
         fi
     else
-        log "Ingen installationer med forældet PHP fundet."
+        log "No installations with outdated PHP detected."
     fi
 
     exit 0
 fi
 
-# ------------------------
-# Hvis input er 'all' eller domæne
-# ------------------------
+# ----------------
+# Update Function
+# ----------------
 
 update_instance() {
     local ID=$1
-    log "Opdaterer installation ID: $ID"
+    log "Updating installation ID: $ID"
 
     wp-toolkit --wp-cli -instance-id "$ID" -- plugin update --all 2>&1 | tee -a "$LOGFILE"
     wp-toolkit --wp-cli -instance-id "$ID" -- theme update --all 2>&1 | tee -a "$LOGFILE"
@@ -119,21 +125,30 @@ update_instance() {
     wp-toolkit --clear-cache -instance-id "$ID" 2>&1 | tee -a "$LOGFILE"
 
     if wp-toolkit --wp-cli -instance-id "$ID" -- plugin is-active litespeed-cache > /dev/null 2>&1; then
-        log "LiteSpeed Cache plugin er aktivt - forsøger at rydde LiteSpeed cache"
-        if ! wp-toolkit --wp-cli -instance-id "$ID" -- litespeed-purge all > /dev/null 2>&1; then
-            log "LiteSpeed CLI ikke installeret - springer cache clear over."
+        log "LiteSpeed Cache plugin is active - checking for CLI purge command..."
+        
+        if wp-toolkit --wp-cli -instance-id "$ID" -- help | grep -q "litespeed-purge"; then
+            if wp-toolkit --wp-cli -instance-id "$ID" -- litespeed-purge all > /dev/null 2>&1; then
+                log "LiteSpeed cache successfully purged."
+            else
+                log "Error while purging LiteSpeed cache."
+            fi
         else
-            log "LiteSpeed cache ryddet."
+            log "LiteSpeed purge command not available - skipping LiteSpeed cache clear."
         fi
     else
-        log "LiteSpeed Cache plugin ikke aktivt - ingen cache clear"
+        log "LiteSpeed Cache plugin is not active - skipping LiteSpeed cache clear."
     fi
 
-    log "Færdig med opdatering og cache clear for installation ID: $ID"
+    log "Finished updating and clearing cache for installation ID: $ID"
 }
 
+# ----------------
+# Main Execution
+# ----------------
+
 if [ "$1" == "all" ]; then
-    log "Starter opdatering af ALLE WordPress installationer..."
+    log "Starting update of all WordPress installations..."
 
     TOTAL=0
     ERROR_COUNT=0
@@ -142,7 +157,7 @@ if [ "$1" == "all" ]; then
     LIMIT="$2"
 
     if [ -n "$LIMIT" ]; then
-        log "Begrænser opdatering til de første $LIMIT installationer."
+        log "Limiting update to the first $LIMIT installations."
         IDS=$(wp-toolkit --list | awk '{print $1}' | tail -n +2 | head -n "$LIMIT")
     else
         IDS=$(wp-toolkit --list | awk '{print $1}' | tail -n +2)
@@ -154,55 +169,56 @@ if [ "$1" == "all" ]; then
             update_instance "$id"
             TOTAL=$((TOTAL + 1))
 
-            if tail -n 20 "$LOGFILE" | grep -iq "fejl"; then
+            if tail -n 20 "$LOGFILE" | grep -iq "error"; then
                 ERROR_COUNT=$((ERROR_COUNT + 1))
                 FAILED_DOMAINS="$FAILED_DOMAINS\n- $DOMAIN"
             fi
         fi
     done
 
-    log "Færdig med opdatering."
-    log "Antal installationer behandlet: $TOTAL"
-    log "Antal installationer med fejl: $ERROR_COUNT"
+    log "Finished updating."
+    log "Total installations processed: $TOTAL"
+    log "Total installations with errors: $ERROR_COUNT"
 
     if [ "$ERROR_COUNT" -gt 0 ]; then
-        log "Fejl på følgende domæner:$(echo -e "$FAILED_DOMAINS")"
+        log "Errors occurred on the following domains:$(echo -e "$FAILED_DOMAINS")"
     fi
+
 else
     DOMAIN=$1
-    log "Starter opdatering for domæne: $DOMAIN"
+    log "Starting update for domain: $DOMAIN"
 
     ID=$(wp-toolkit --list | grep -w "$DOMAIN" | awk '{print $1}')
 
     if [ -z "$ID" ]; then
-        log "Fejl: Kunne ikke finde WordPress installation for domænet $DOMAIN"
+        log "Error: Could not find WordPress installation for domain $DOMAIN"
         if [ "$SEND_MAIL" == "yes" ]; then
-            echo "Fejl: Kunne ikke finde WordPress installation for $DOMAIN" | mail -s "❌ Fejl ved opdatering af $DOMAIN" "$EMAIL"
+            echo "Error: Could not find WordPress installation for domain $DOMAIN" | mail -s "❌ Error updating $DOMAIN" "$EMAIL"
         fi
         exit 1
     fi
 
-    log "Fundet installation ID: $ID for $DOMAIN"
+    log "Found installation ID: $ID for $DOMAIN"
     update_instance "$ID"
 
-    log "Færdig med opdatering for $DOMAIN."
+    log "Finished updating domain: $DOMAIN"
 fi
 
-# ------------------------
-# E-mail notifikation hvis ønsket
-# ------------------------
+# ----------------
+# Email Notifications
+# ----------------
 
 if [ "$SEND_MAIL" == "yes" ]; then
     if [ "$MAIL_MODE" == "errors" ]; then
-        if grep -iq "fejl" "$LOGFILE"; then
-            mail -s "❌ Fejl under WordPress opdatering" "$EMAIL" < "$LOGFILE"
+        if grep -iq "error" "$LOGFILE"; then
+            mail -s "❌ WordPress Update Error" "$EMAIL" < "$LOGFILE"
         fi
     elif [ "$MAIL_MODE" == "success" ]; then
-        if ! grep -iq "fejl" "$LOGFILE"; then
-            mail -s "✅ WordPress opdatering gennemført uden fejl" "$EMAIL" < "$LOGFILE"
+        if ! grep -iq "error" "$LOGFILE"; then
+            mail -s "✅ WordPress Update Successful" "$EMAIL" < "$LOGFILE"
         fi
     elif [ "$MAIL_MODE" == "both" ]; then
-        mail -s "ℹ️ WordPress opdatering status" "$EMAIL" < "$LOGFILE"
+        mail -s "ℹ️ WordPress Update Report" "$EMAIL" < "$LOGFILE"
     fi
 fi
 
