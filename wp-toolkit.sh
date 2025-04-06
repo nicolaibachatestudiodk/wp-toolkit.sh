@@ -6,7 +6,7 @@
 
 TODAY=$(date '+%Y-%m-%d')
 LOGFILE="/var/log/wp-toolkit-update-$TODAY.log"
-EMAIL="support@e-studio.dk"
+EMAIL="email@domain.dk"
 
 # -- Variabler du kan styre --
 SEND_MAIL="yes"          # yes eller no
